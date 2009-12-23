@@ -26,10 +26,17 @@ user_config = {
   ],
   
   # start revision
-  :start => "{2009-12-01}",
+  # A revision argument can be one of:
+  #  NUMBER       revision number
+  #  '{' DATE '}' revision at start of the date
+  #  'HEAD'       latest in repository
+  #  'BASE'       base rev of item's working copy
+  #  'COMMITTED'  last commit at or before BASE
+  #  'PREV'       revision just before COMMITTED
+  :start_rev => "{2009-12-01}",
   
   # stop revision
-  :stop => "{2009-12-31}",
+  :stop_rev => "{2009-12-31}",
 
   # footer
   :copyright => "Copyright &copy; #{Time.now.year} <a href=\"http://martin.ankerl.com/\">Martin Ankerl</a>",
@@ -186,6 +193,10 @@ class SvnShortlog
     end
     str
   end
+  
+  def rev_to_s(str)
+    str = str.gsub(/[{}]/, "")
+  end  
 
   # creates array of Entry data blob from SVN XML.
   def parse_xml(doc)
@@ -259,7 +270,7 @@ class SvnShortlog
   def run
 
     # get data
-    cmd = "svn log #{@user_config[:url]} -r #{@user_config[:start]}:#{@user_config[:stop]} -v --xml"
+    cmd = "svn log #{@user_config[:url]} -r #{@user_config[:start_rev]}:#{@user_config[:stop_rev]} -v --xml"
     puts "running '#{cmd}'"
     f = `#{cmd}`
     data = parse_xml(Document.new(f))
@@ -274,7 +285,7 @@ class SvnShortlog
       h[k]
     end
 
-    output_filename = "changes_#{@user_config[:start]}_to_#{@user_config[:stop]}.html"
+    output_filename = "changes_#{rev_to_s(@user_config[:start_rev])}_to_#{rev_to_s(@user_config[:stop_rev])}.html"
     puts "creating '#{output_filename}'"
     
     #out = STDOUT
@@ -284,7 +295,7 @@ class SvnShortlog
       # unique id for visibility
       id = 0
 
-      out.puts "<h1>Changes from #{@user_config[:start]} to #{@user_config[:stop]}</h1>"
+      out.puts "<h1>Changes from #{rev_to_s(@user_config[:start_rev])} to #{rev_to_s(@user_config[:stop_rev])}</h1>"
 
       # quick link to all authors
       authors = data.map { |a,e| "<a href=\"##{a}\">#{a} (#{e.size})</a>" }
