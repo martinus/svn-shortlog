@@ -43,6 +43,7 @@ user_config = {
 }
 # user config END
 
+
 # HTML header with CSS
 head = <<-'EOF'
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
