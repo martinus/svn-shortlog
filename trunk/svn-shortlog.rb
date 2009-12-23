@@ -1,6 +1,14 @@
 #!/usr/bin/ruby
 
-# user config BEGIN
+# Creates a compact overview of recent changes in an Subversion repository.
+#
+# Author:: Martin Ankerl (mailto:martin.ankerl@gmail.com)
+# Copyright:: Copyright (c) 2006-2009 Martin Ankerl
+# License:: New BSD License
+#
+# Homepage:: https://code.google.com/p/svn-shortlog/
+
+# user configuration BEGIN
 user_config = {
   :repository => "http://svn.boost.org/svn/boost",
   :url => "http://svn.boost.org/svn/boost/trunk",
@@ -16,12 +24,17 @@ user_config = {
   :msg_gsubs => [    
     [ /\#(\d+)/, "<a target=\"_blank\" href=\"https://svn.boost.org/trac/boost/ticket/\\1\">\\0</a>"]
   ],
+  
+  # start revision
+  :start => "{2009-12-01}",
+  
+  # stop revision
+  :stop => "{2009-12-31}",
 
   # footer
   :copyright => "Copyright &copy; #{Time.now.year} <a href=\"http://martin.ankerl.com/\">Martin Ankerl</a>",
 }
 # user config END
-
 
 # HTML header with CSS
 head = <<-'EOF'
@@ -244,13 +257,11 @@ class SvnShortlog
 
   # run everything
   def run
-    usage if (ARGV.length != 2)
-
-    from_date = ARGV[0]
-    to_date = ARGV[1]
 
     # get data
-    f = `svn log #{@user_config[:url]} -r {#{from_date}}:{#{to_date}} -v --xml`
+    cmd = "svn log #{@user_config[:url]} -r #{@user_config[:start]}:#{@user_config[:stop]} -v --xml"
+    puts "running '#{cmd}'"
+    f = `#{cmd}`
     data = parse_xml(Document.new(f))
     data = restructure(data)
 
@@ -263,7 +274,9 @@ class SvnShortlog
       h[k]
     end
 
-    output_filename = "changes_#{from_date}_to_#{to_date}.html"
+    output_filename = "changes_#{@user_config[:start]}_to_#{@user_config[:stop]}.html"
+    puts "creating '#{output_filename}'"
+    
     #out = STDOUT
     File.open(output_filename, "w") do |out|
       out.puts @head
@@ -271,7 +284,7 @@ class SvnShortlog
       # unique id for visibility
       id = 0
 
-      out.puts "<h1>Changes from #{from_date} to #{to_date}</h1>"
+      out.puts "<h1>Changes from #{@user_config[:start]} to #{@user_config[:stop]}</h1>"
 
       # quick link to all authors
       authors = data.map { |a,e| "<a href=\"##{a}\">#{a} (#{e.size})</a>" }
@@ -338,8 +351,6 @@ class SvnShortlog
       out.puts "<br />Created in #{Time.now - @start_time} seconds"
       out.puts "</center></body></html>"  
     end
-    system("start #{output_filename}")
-    puts
     puts "done!"
     puts 
   end
